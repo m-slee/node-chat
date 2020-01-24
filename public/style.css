@@ -1,0 +1,35 @@
+html, body, #app {
+  height: 100%;
+}
+
+#app {
+  min-height: 100%;
+}
+
+.chat-area {
+  position: relative;
+  background-color: #f7f7f7;
+}
+
+.bottom {
+  height: 100px;
+}
+
+.chat {
+  position: fixed;
+  bottom: 0;
+  margin-left: -1px;
+  z-index: 1;
+}
+
+@media screen and (max-width: 768px) {
+  #menu-toggle:checked + .nav-menu {
+    display: block;
+  }
+}
+
+.chat, .send, #hide {
+  -webkit-transition: all .3s ease-in-out;
+  transition: all .3s ease-in-out;
+}
+/*# sourceMappingURL=style.css.map */

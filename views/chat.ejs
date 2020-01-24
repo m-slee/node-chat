@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <script src="/static/script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.dev.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="app">
+        <input type="hidden" id="sender" name="name_value" value=<%= name %>>
+        <input type="hidden" id="current_room" name="room" value=<%= chatrooms.General %>>
+        <nav class="nav has-shadow">
+          <div class="container">
+            <div class="nav-left">
+              <a class="nav-item">Live-Chat <span><h1 class="has-text-primary" id="username">&nbsp; - Welcome, <span class="title is-5"><%= name %></span></h1></span></a>
+            </div>
+            <label for="menu-toggle" class="nav-toggle">
+              <span></span>
+              <span></span>
+              <span></span>
+            </label>
+            <input type="checkbox" id="menu-toggle" class="is-hidden"/>
+            <div class="nav-right nav-menu">
+              <a class="nav-item is-tab is-hidden-tablet">
+                <span class="icon"><i class="fa fa-home"></i></span> Home
+              </a>
+              <a class="nav-item is-tab is-active">
+                <span class="icon"><i class="fa fa-user"></i></span>
+              </a>
+            </div>
+          </div>
+        </nav>
+        <section class="main-content columns is-fullheight">
+            <aside class="column is-2 is-narrow-mobile is-fullheight section is-hidden-mobile">
+            <p class="menu-label is-hidden-touch">Navigation</p>
+            <ul class="menu-list">
+              <li>
+                <a href="#" class="">
+                    <span class="icon"><i class="fa fa-home"></i></span> Home
+                </a>
+              </li>
+              <li>
+                <a href="#" class="is-active">
+                  <span class="icon"><i class="fa fa-table"></i></span> Rooms
+                </a>
+        
+                <ul id="chat-messages">
+                    <% for (var room in chatrooms) { %>
+                        <li>
+                            <a class="room" data-room-name=<%= room %> id=<%= room %> href="#">
+                              <span class="icon is-small"><i class="fa fa-link"></i></span>
+                              <%= room %>
+                            </a>
+                          </li>
+                    <% } %>
+                </ul>
+              </li>
+              <li>
+                <a href="#" class="">
+                  <span class="icon"><i class="fa fa-info"></i></span> About
+                </a>
+              </li>
+            </ul>
+          </aside>
+        
+          <div class="container column is-full">
+            <div class="section chat-area">
+                <div class="message">
+                <form action="">
+                <textarea class="textarea is-primary chat" placeholder="e.g. Hello world"></textarea>
+                <div class="control chat">
+                    <button  class="send button is-primary">Send Message</button>
+                    <button class="hide button is-info">Hide</button>
+                </div>
+                </div>
+                </form>
+                <ul id="messages">
+                    <% chatrooms.General.forEach(function(message) { %>
+                        <div class="card">
+                            <div class="card-header"><p class="card-header-title"><%= message.sender %></p></div>
+                            <div class="card-content"><div class="content"><%= message.content %></div></div>
+                        </div><br />
+                    <% }); %>
+                </ul>
+            <div class="bottom"></div>
+            </div>
+        </div>
+        </section>
+    </div>
+        
+        <!-- socket io events -->
+        <script> 
+        $(function () {
+            var socket = io();
+            let current_room = 'General';
+            console.log(current_room);
+            let sender = $('#sender').val();
+            $('form').submit(function(e){
+              e.preventDefault(); // prevents page reloading
+              if ($('.textarea').val() !== '') {
+                socket.emit('chat message', $('.textarea').val(), sender, current_room);
+              }
+              $('.textarea').val('');
+              return false;
+            });
+            socket.on('chat message', function(msg, sender){
+                $('#messages').append(`
+                                <div class="card">
+                                <div class="card-header"><p class="card-header-title">${sender}</p></div>
+                                <div class="card-content"><div class="content">${msg}</div></div>
+                                </div><br />
+                                    `);
+                });
+
+            // add click events to rooms
+            let rooms = document.querySelectorAll('.room');
+            rooms.forEach((room) => {
+                room.addEventListener('click', () => {
+                    //console.log(room.dataset.roomName);
+                    $('#messages').empty();
+                    current_room = room.dataset.roomName;
+                    fetch(`/room/${current_room}`)
+                    .then((response) => {
+                        return response.json();
+                    })
+                    .then((rooms) => {
+                        console.log(rooms);
+                        rooms.forEach(function(message) {
+                        $('#messages').append(`
+                            <div class="card">
+                                <div class="card-header"><p class="card-header-title">${message.sender}</p></div>
+                                <div class="card-content"><div class="content">${message.content}</div></div>
+                            </div><br />`);
+                });
+                    });
+                    console.log(rooms); 
+                    // emit a change room event
+                    //socket.emit('change room', current_room);
+                    // empty the current message list
+                    
+                })
+            });
+
+            // handled with ajax above
+            /*
+            socket.on('change room', function(room){
+                //console.log('in socket' + room);
+                    room.forEach(function(message) {
+                        $('#messages').append(`
+                            <div class="card">
+                                <div class="card-header"><p class="card-header-title">${message.sender}</p></div>
+                                <div class="card-content"><div class="content">${message.content}</div></div>
+                            </div><br />`);
+                });
+                });
+            */
+
+        });
+          </script>
+        
+</body>
+</html>
